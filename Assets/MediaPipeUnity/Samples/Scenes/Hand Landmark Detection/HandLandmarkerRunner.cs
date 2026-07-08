@@ -14,6 +14,7 @@ namespace Mediapipe.Unity.Sample.HandLandmarkDetection
   public class HandLandmarkerRunner : VisionTaskApiRunner<HandLandmarker>
   {
     [SerializeField] private HandLandmarkerResultAnnotationController _handLandmarkerResultAnnotationController;
+    [SerializeField] private global::UE_MediaPipeHandTrackingAdapter handTrackingAdapter;
 
     private Experimental.TextureFramePool _textureFramePool;
 
@@ -55,9 +56,15 @@ namespace Mediapipe.Unity.Sample.HandLandmarkDetection
       _textureFramePool = new Experimental.TextureFramePool(imageSource.textureWidth, imageSource.textureHeight, TextureFormat.RGBA32, 10);
 
       // NOTE: The screen will be resized later, keeping the aspect ratio.
-      screen.Initialize(imageSource);
+      if (screen != null)
+      {
+        screen.Initialize(imageSource);
+      }
 
-      SetupAnnotationController(_handLandmarkerResultAnnotationController, imageSource);
+      if (_handLandmarkerResultAnnotationController != null)
+      {
+        SetupAnnotationController(_handLandmarkerResultAnnotationController, imageSource);
+      }
 
       var transformationOptions = imageSource.GetTransformationOptions();
       var flipHorizontally = transformationOptions.flipHorizontally;
@@ -127,21 +134,25 @@ namespace Mediapipe.Unity.Sample.HandLandmarkDetection
           case Tasks.Vision.Core.RunningMode.IMAGE:
             if (taskApi.TryDetect(image, imageProcessingOptions, ref result))
             {
-              _handLandmarkerResultAnnotationController.DrawNow(result);
+              _handLandmarkerResultAnnotationController?.DrawNow(result);
+              handTrackingAdapter?.Apply(result);
             }
             else
             {
-              _handLandmarkerResultAnnotationController.DrawNow(default);
+              _handLandmarkerResultAnnotationController?.DrawNow(default);
+              handTrackingAdapter?.Apply(default);
             }
             break;
           case Tasks.Vision.Core.RunningMode.VIDEO:
             if (taskApi.TryDetectForVideo(image, GetCurrentTimestampMillisec(), imageProcessingOptions, ref result))
             {
-              _handLandmarkerResultAnnotationController.DrawNow(result);
+              _handLandmarkerResultAnnotationController?.DrawNow(result);
+              handTrackingAdapter?.Apply(result);
             }
             else
             {
-              _handLandmarkerResultAnnotationController.DrawNow(default);
+              _handLandmarkerResultAnnotationController?.DrawNow(default);
+              handTrackingAdapter?.Apply(default);
             }
             break;
           case Tasks.Vision.Core.RunningMode.LIVE_STREAM:
@@ -153,7 +164,8 @@ namespace Mediapipe.Unity.Sample.HandLandmarkDetection
 
     private void OnHandLandmarkDetectionOutput(HandLandmarkerResult result, Image image, long timestamp)
     {
-      _handLandmarkerResultAnnotationController.DrawLater(result);
+      _handLandmarkerResultAnnotationController?.DrawLater(result);
+      handTrackingAdapter?.Apply(result);
     }
   }
 }

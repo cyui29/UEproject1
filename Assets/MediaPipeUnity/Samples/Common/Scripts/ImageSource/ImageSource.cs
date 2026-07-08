@@ -31,12 +31,12 @@ namespace Mediapipe.Unity
       {
         width = resolution.width;
         height = resolution.height;
-        frameRate = resolution.refreshRate;
+        frameRate = ToFrameRate(resolution.refreshRateRatio);
       }
 
       public Resolution ToResolution()
       {
-        return new Resolution() { width = width, height = height, refreshRate = (int)frameRate };
+        return new Resolution() { width = width, height = height, refreshRateRatio = ToRefreshRate(frameRate) };
       }
 
       public override string ToString()
@@ -44,6 +44,21 @@ namespace Mediapipe.Unity
         var aspectRatio = $"{width}x{height}";
         var frameRateStr = frameRate.ToString("#.##");
         return frameRate > 0 ? $"{aspectRatio} ({frameRateStr}Hz)" : aspectRatio;
+      }
+
+      private static double ToFrameRate(RefreshRate refreshRate)
+      {
+        return refreshRate.denominator == 0 ? 0 : (double)refreshRate.numerator / refreshRate.denominator;
+      }
+
+      private static RefreshRate ToRefreshRate(double frameRate)
+      {
+        if (frameRate <= 0)
+        {
+          return default;
+        }
+
+        return new RefreshRate { numerator = (uint)Math.Round(frameRate * 1000), denominator = 1000 };
       }
     }
 
